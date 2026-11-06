@@ -1,0 +1,640 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#fbf6ef" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1d1916" media="(prefers-color-scheme: dark)">
+<title>Yobanashi · 夜話</title>
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<style>
+/*
+ * Design : voir docs/DESIGN.md (règles reprises du design system de iq et de Kotopi).
+ * Une seule chose forte par écran (l'accent), tout le reste neutre ; pas de dégradé, pas de titres en capitales ;
+ * mouvement ease-out, < 300 ms, sans ressort ; cibles ≥ 44 px ; chiffres tabulaires.
+ */
+@font-face { font-family: 'Nunito'; font-display: swap; font-weight: 200 1000; src: url('fonts/nunito-latin-wght.woff2') format('woff2');
+  unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Nunito'; font-display: swap; font-weight: 200 1000; src: url('fonts/nunito-latin-ext-wght.woff2') format('woff2');
+  unicode-range: U+0100-02BA, U+02BD-02C5, U+02C7-02CC, U+02CE-02D7, U+02DD-02FF, U+1D00-1DBF, U+1E00-1E9F, U+1EF2-1EFF, U+2020, U+20A0-20AB, U+20AD-20C0, U+2113, U+2C60-2C7F, U+A720-A7FF; }
+@font-face { font-family: 'Yobanashi Kana'; font-display: swap; font-weight: 500; src: url('fonts/mplus-rounded-kana-500.woff2') format('woff2');
+  unicode-range: U+3001-3002, U+3041-307F, U+3081-308F, U+3091-3093, U+3099-309A, U+309D-309E, U+30A1-30E1, U+30E3-30ED, U+30EF-30F0, U+30F2-30F4, U+30FB-30FE; }
+@font-face { font-family: 'Yobanashi Kana'; font-display: swap; font-weight: 800; src: url('fonts/mplus-rounded-kana-800.woff2') format('woff2');
+  unicode-range: U+3001-3002, U+3041-307F, U+3081-308F, U+3091-3093, U+3099-309A, U+309D-309E, U+30A1-30E1, U+30E3-30ED, U+30EF-30F0, U+30F2-30F4, U+30FB-30FE; }
+
+:root {
+  --paper: #fbf6ef; --card: #ffffff; --well: #f3ebe0; --line: #e8ddcf;
+  --ink: #2d2622; --ink-soft: #6e6259; --ink-faint: #a69a8f;
+  --accent: #4b5bb7; --on-accent: #fff; /* bleu nuit : le soir */
+  --star: #f2a516; --ok: #1e9a68; --danger: #e14b4b; --dure: #c4553b; --warn-soft: #fdf0d2; --warn: #8a5207;
+  --mix-deep: #10132e; --mix-soft: white;
+  --shadow-1: 0 1px 2px rgb(74 52 30 / 6%), 0 2px 8px rgb(74 52 30 / 7%);
+  --shadow-2: 0 -2px 24px rgb(74 52 30 / 14%);
+  --lift: 0 4px 12px -4px color-mix(in oklab, var(--accent) 55%, transparent);
+  --edge: 1px solid transparent;
+  --r-sm: 8px; --r-md: 12px; --r-lg: 20px; --r-xl: 28px;
+  --ease-out: cubic-bezier(.22, 1, .36, 1);
+  --font: 'Nunito', 'Yobanashi Kana', 'Hiragino Maru Gothic ProN', system-ui, sans-serif;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    --paper: #1d1916; --card: #2a2420; --well: #332c27; --line: #3b332d;
+    --ink: #f4ece3; --ink-soft: #c3b6a9; --ink-faint: #8c8075;
+    --accent: #8f9cf0; --on-accent: #14183d; --star: #f7b733; --ok: #3cc48c; --danger: #f06363; --dure: #ef8a72; --warn-soft: #463618; --warn: #fcd34d;
+    --mix-deep: #f1f0ff; --mix-soft: var(--card);
+    /* En sombre, une ombre ne se voit pas : un liseré clair à la place. */
+    --shadow-1: none; --shadow-2: none; --lift: none;
+    --edge: 1px solid rgb(255 255 255 / 8%);
+    color-scheme: dark;
+  }
+}
+:root, .tint {
+  --accent-deep: color-mix(in oklab, var(--accent) 78%, var(--mix-deep));
+  --accent-soft: color-mix(in oklab, var(--accent) 16%, var(--mix-soft));
+}
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+html, body { margin: 0; background: var(--paper); color: var(--ink); }
+body { font: 600 17px/1.55 var(--font); -webkit-font-smoothing: antialiased; padding-bottom: calc(84px + env(safe-area-inset-bottom)); }
+:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+svg.i { width: 1.25em; height: 1.25em; flex: none; vertical-align: -.25em; }
+.num, .stat b, .cal, .seance .date { font-variant-numeric: tabular-nums; }
+
+header { position: sticky; top: 0; z-index: 5; background: color-mix(in oklab, var(--paper) 90%, transparent);
+  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); padding: calc(8px + env(safe-area-inset-top)) 16px 8px; }
+.bar { max-width: 720px; margin: 0 auto; display: flex; align-items: center; gap: 10px; min-height: 44px; }
+.bar h1 { font-size: 1.75rem; font-weight: 900; margin: 0; flex: 1; letter-spacing: -.015em; line-height: 1.2; }
+.bar h1 small { font-size: 1rem; font-weight: 800; color: var(--ink-faint); margin-left: 8px; }
+.icon-btn { display: inline-grid; place-items: center; width: 44px; height: 44px; border-radius: 999px; border: var(--edge);
+  background: var(--card); box-shadow: var(--shadow-1); color: var(--ink); cursor: pointer; text-decoration: none; flex: none; }
+.icon-btn.plain { background: none; box-shadow: none; border-color: transparent; color: var(--ink-faint); }
+.icon-btn:active, .btn:active, .chip:active, a.row-link:active { transform: scale(.97); }
+
+main { padding: 4px 16px 16px; max-width: 720px; margin: 0 auto; }
+h3.group { font-size: 1.2rem; font-weight: 900; margin: 28px 4px 10px; line-height: 1.3; }
+
+/* Barre d'onglets : pleine largeur, libellés toujours visibles, indicateur en pilule derrière l'icône. */
+nav.tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 5; display: flex; justify-content: center;
+  background: var(--card); border-top: 1px solid var(--line); padding: 8px 8px calc(8px + env(safe-area-inset-bottom)); }
+nav.tabs a { flex: 1; max-width: 160px; display: flex; flex-direction: column; align-items: center; gap: 4px; min-height: 52px;
+  color: var(--ink-soft); text-decoration: none; font-size: .8rem; font-weight: 800; }
+nav.tabs .pill { display: grid; place-items: center; width: 56px; height: 32px; border-radius: 999px; transition: background-color .2s var(--ease-out); }
+nav.tabs a.on { color: var(--ink); }
+nav.tabs a.on .pill { background: var(--accent); color: var(--on-accent); }
+
+.card { background: var(--card); border: var(--edge); border-radius: var(--r-lg); padding: 16px 18px; margin-bottom: 12px; box-shadow: var(--shadow-1); }
+.card.list { padding: 0; overflow: hidden; }
+a.row-link { display: flex; align-items: center; gap: 12px; padding: 14px 16px 14px 18px; color: inherit; text-decoration: none; transition: background-color .15s var(--ease-out); }
+a.row-link + a.row-link { border-top: 1px solid var(--line); }
+a.row-link:hover { background: color-mix(in oklab, var(--well) 50%, transparent); }
+a.row-link .body { flex: 1; min-width: 0; }
+a.row-link .chev { color: var(--ink-faint); }
+a.row-link.done .title { color: var(--ink-soft); }
+
+.tonight { padding: 20px; }
+.tonight .label { font-size: .9rem; font-weight: 800; color: var(--ink-soft); }
+.tonight .title { font-size: 1.5rem; line-height: 1.25; margin: 2px 0 6px; }
+.tonight .support { color: var(--ink-soft); font-weight: 600; margin: 0 0 16px; }
+
+.title { font-size: 1.1rem; font-weight: 900; line-height: 1.3; margin: 0 0 4px; }
+.meta { font-size: .85rem; color: var(--ink-soft); display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; }
+.tag { display: inline-flex; align-items: center; gap: 6px; background: var(--well); color: var(--ink-soft); border-radius: var(--r-sm); padding: 1px 8px; font-weight: 800; font-size: .8rem; }
+.tag.dure::before { content: ''; width: 7px; height: 7px; border-radius: 999px; background: var(--dure); }
+.tag .i { width: 1em; height: 1em; }
+.ok { color: var(--ok); font-weight: 800; display: inline-flex; gap: 3px; align-items: center; }
+.rating { display: inline-flex; align-items: center; gap: 3px; }
+.rating svg { width: 14px; height: 14px; color: var(--star); }
+
+.chips { display: flex; gap: 8px; overflow-x: auto; padding: 4px 16px 10px; margin: 20px -16px 0; scrollbar-width: none; }
+.chips::-webkit-scrollbar { display: none; }
+button, select, input, textarea { font: 700 1rem var(--font); color: var(--ink); }
+button { cursor: pointer; -webkit-tap-highlight-color: transparent; }
+.chip { flex: none; min-height: 40px; padding: 8px 14px; border-radius: 999px; border: 1px solid var(--line); background: var(--card); color: var(--ink-soft); white-space: nowrap; }
+.chip.on { background: var(--accent); border-color: var(--accent); color: var(--on-accent); }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; min-height: 48px; padding: 10px 20px; border-radius: var(--r-md);
+  border: 1px solid var(--line); background: var(--card); color: var(--ink); font-weight: 800; text-decoration: none; white-space: nowrap; transition: transform .12s var(--ease-out); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--on-accent); box-shadow: var(--lift); }
+.btn.tinted { background: var(--accent-soft); border-color: transparent; color: var(--accent-deep); }
+.btn.danger { background: var(--danger); border-color: var(--danger); color: #fff; }
+.btn.wide { width: 100%; }
+select, input, textarea { background: var(--well); border: 2px solid transparent; border-radius: var(--r-md); padding: 10px 12px; width: 100%; min-height: 48px; }
+select:focus, input:focus, textarea:focus { outline: none; border-color: var(--accent); background: var(--card); }
+textarea { min-height: 84px; resize: vertical; }
+label.f { display: block; font-size: .8rem; font-weight: 800; color: var(--ink-soft); margin: 0 4px 4px; }
+.row { display: flex; gap: 10px; align-items: end; margin-bottom: 10px; }
+.row > * { flex: 1; min-width: 0; }
+.row > .fit { flex: none; }
+
+.fiche-head { padding: 4px 4px 0; }
+.fiche-head h2 { font-size: 2rem; font-weight: 900; line-height: 1.15; margin: 10px 0 8px; letter-spacing: -.015em; }
+.source { font-size: .9rem; color: var(--ink-soft); font-weight: 600; font-style: italic; }
+.prose { font-weight: 500; font-size: 1.08rem; line-height: 1.65; }
+.prose p { margin: 0 0 .8em; }
+.prose strong { font-weight: 800; }
+.prose ul, .prose ol { padding-left: 1.3em; margin: 0 0 .8em; }
+.prose li { margin-bottom: .3em; }
+.prose blockquote { margin: 10px 0; padding: 10px 14px; border-radius: var(--r-md); background: var(--well); }
+.prose h4 { font-weight: 900; margin: 1em 0 .3em; }
+.section { background: var(--card); border: var(--edge); border-radius: var(--r-lg); box-shadow: var(--shadow-1); padding: 4px 20px 8px; margin-bottom: 12px; }
+.section h3 { font-size: 1.15rem; font-weight: 900; margin: 16px 0 8px; display: flex; gap: 8px; align-items: center; }
+.section.retenir .prose { font-size: 1.2rem; font-weight: 800; }
+.section.recit .prose { font-size: 1.15rem; }
+.section.piege { background: var(--warn-soft); box-shadow: none; border-color: transparent; }
+details.section > summary { list-style: none; cursor: pointer; min-height: 44px; }
+details.section > summary::-webkit-details-marker { display: none; }
+details.section > summary h3 { margin: 12px 0; }
+details.section > summary .chev { margin-left: auto; color: var(--ink-faint); transition: transform .2s var(--ease-out); }
+details.section[open] > summary .chev { transform: rotate(90deg); }
+details.section[open] > summary ~ * { animation: fade .16s var(--ease-out); }
+.ja .prose { font-family: 'Yobanashi Kana', 'Hiragino Maru Gothic ProN', 'Hiragino Sans', var(--font); font-size: 1.3rem; line-height: 2.2; font-weight: 500; }
+ruby rt { font-size: .5em; color: var(--ink-soft); font-weight: 500; }
+
+.figs { display: flex; gap: 12px; overflow-x: auto; scroll-snap-type: x mandatory; margin: 14px -16px 18px; padding: 0 16px; scrollbar-width: none; }
+.figs::-webkit-scrollbar { display: none; }
+.figs figure { flex: none; width: 82%; margin: 0; scroll-snap-align: center; }
+.figs figure:only-child { width: 100%; }
+.figs img { display: block; width: 100%; height: 300px; object-fit: contain; background: var(--well); border-radius: var(--r-lg); }
+.figs figcaption { font-size: .82rem; color: var(--ink-soft); margin: 6px 4px 0; font-weight: 600; }
+.figs .credit { display: inline-block; margin-top: 2px; font-size: .74rem; font-weight: 600; color: var(--ink-faint); text-decoration: underline; text-underline-offset: 2px; }
+
+.warn { display: flex; gap: 10px; align-items: flex-start; background: var(--warn-soft); color: var(--warn); border-radius: var(--r-md); padding: 10px 14px; margin: 10px 0; font-size: .95rem; }
+
+.who-row { display: flex; align-items: center; gap: 10px; padding: 6px 0; }
+.who-row + .who-row { border-top: 1px solid var(--line); }
+.avatar { display: inline-grid; place-items: center; width: 36px; height: 36px; border-radius: 999px; flex: none;
+  background: var(--accent-soft); color: var(--accent-deep); font-weight: 900; font-size: .95rem; }
+.who-row .name { flex: 1; font-weight: 800; min-width: 0; }
+.stars { display: flex; }
+.stars button { border: none; background: none; width: 40px; height: 44px; padding: 0; color: var(--line); display: grid; place-items: center; transition: transform .12s var(--ease-out); }
+.stars button:active { transform: scale(.9); }
+.stars button svg { width: 28px; height: 28px; transition: color .15s var(--ease-out); }
+.stars button.lit { color: var(--star); }
+
+.seance { display: flex; gap: 12px; padding: 12px 0; border-top: 1px solid var(--line); align-items: flex-start; }
+.seance:first-child { border-top: none; }
+.seance .date { flex: none; width: 52px; text-align: center; background: var(--well); border-radius: var(--r-md); padding: 6px 0; line-height: 1.1; }
+.seance .date b { display: block; font-size: 1.3rem; font-weight: 900; }
+.seance .date span { font-size: .75rem; font-weight: 800; color: var(--ink-soft); }
+.seance .body { flex: 1; min-width: 0; padding-top: 2px; }
+.seance a { color: var(--ink); font-weight: 800; text-decoration: none; }
+.seance .com { color: var(--ink-soft); font-weight: 600; margin-top: 2px; }
+
+.cal-head { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+.cal-head b { flex: 1; text-align: center; font-size: 1.15rem; font-weight: 900; }
+.cal { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; text-align: center; font-size: .95rem; }
+.cal div { aspect-ratio: 1; display: grid; place-items: center; border-radius: var(--r-sm); font-weight: 700; color: var(--ink-soft); }
+.cal .hd { aspect-ratio: auto; color: var(--ink-faint); font-size: .75rem; font-weight: 900; padding-bottom: 4px; }
+.cal .has { background: var(--accent); color: var(--on-accent); font-weight: 900; }
+.cal .today { box-shadow: inset 0 0 0 2px var(--ink); color: var(--ink); font-weight: 900; }
+.cal .has.today { box-shadow: inset 0 0 0 2px var(--accent), inset 0 0 0 4px var(--card); }
+.stats { display: flex; gap: 10px; margin-top: 14px; }
+.stat { flex: 1; background: var(--well); border-radius: var(--r-md); padding: 10px 12px; }
+.stat b { display: block; font-size: 1.5rem; font-weight: 900; line-height: 1.1; }
+.stat span { font-size: .8rem; color: var(--ink-soft); font-weight: 700; }
+
+.membre { display: grid; gap: 10px; }
+.swatches { display: flex; gap: 6px; flex-wrap: wrap; }
+.swatches button { width: 44px; height: 44px; border-radius: 999px; border: none; background: none; padding: 0; display: grid; place-items: center; }
+.swatches span { width: 30px; height: 30px; border-radius: 999px; box-shadow: 0 0 0 3px var(--card); }
+.swatches button.on span { box-shadow: 0 0 0 3px var(--card), 0 0 0 5px var(--ink); }
+.note { font-size: .9rem; color: var(--ink-soft); font-weight: 600; margin: 0 4px 12px; }
+.empty { color: var(--ink-soft); text-align: center; padding: 28px 8px; }
+.empty .title { color: var(--ink); }
+.empty .btn { margin-top: 12px; }
+
+.toast { position: fixed; left: 50%; bottom: calc(84px + env(safe-area-inset-bottom)); transform: translate(-50%, 8px); opacity: 0;
+  background: var(--ink); color: var(--paper); padding: 10px 18px; border-radius: 999px; font-weight: 800;
+  transition: transform .2s var(--ease-out), opacity .2s var(--ease-out); pointer-events: none; z-index: 10; white-space: nowrap; }
+.toast.show { transform: translate(-50%, 0); opacity: 1; }
+
+/* Dialogue : feuille en bas, poignée, action d'abord, Annuler en dernier. */
+.scrim { position: fixed; inset: 0; z-index: 20; background: rgb(20 14 10 / 40%); display: flex; align-items: flex-end; justify-content: center;
+  animation: fade .26s var(--ease-out); }
+.sheet { width: 100%; max-width: 520px; background: var(--card); border: var(--edge); border-radius: var(--r-xl) var(--r-xl) 0 0; box-shadow: var(--shadow-2);
+  padding: 10px 20px calc(20px + env(safe-area-inset-bottom)); animation: sheet-in .26s var(--ease-out); }
+.sheet .grab { width: 40px; height: 5px; border-radius: 999px; background: var(--line); margin: 0 auto 16px; }
+.sheet h2 { font-size: 1.3rem; font-weight: 900; margin: 0 0 6px; }
+.sheet p { color: var(--ink-soft); margin: 0 0 20px; font-weight: 600; }
+.sheet .btn { width: 100%; margin-top: 8px; }
+.scrim.out { animation: fade-out .15s var(--ease-out) forwards; }
+.scrim.out .sheet { animation: sheet-out .15s var(--ease-out) forwards; }
+
+.view { animation: fade-up .24s var(--ease-out) both; }
+@keyframes fade { from { opacity: 0; } }
+@keyframes fade-out { to { opacity: 0; } }
+@keyframes fade-up { from { opacity: 0; transform: translateY(6px); } }
+@keyframes sheet-in { from { opacity: 0; transform: translateY(24px); } }
+@keyframes sheet-out { to { opacity: 0; transform: translateY(24px); } }
+/* Mouvement réduit : on garde les fondus, on retire les déplacements. */
+@media (prefers-reduced-motion: reduce) {
+  .view { animation-name: fade; }
+  .sheet { animation-name: fade; }
+  .scrim.out .sheet { animation-name: fade-out; }
+  .toast { transform: translate(-50%, 0); }
+  *:active { transform: none !important; }
+  details.section > summary .chev { transition: none; }
+}
+</style>
+</head>
+<body>
+<header><div class="bar">
+  <a id="hback" class="icon-btn" href="#/" aria-label="Retour aux Fiches" hidden></a>
+  <h1 id="htitle">Yobanashi</h1>
+</div></header>
+<main id="app"><p class="empty">Chargement…</p></main>
+<nav class="tabs" aria-label="Sections">
+  <a href="#/" data-tab="fiches"></a>
+  <a href="#/calendrier" data-tab="calendrier"></a>
+  <a href="#/reglages" data-tab="reglages"></a>
+</nav>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<script>
+// --- Icônes (traits arrondis, 24×24) -----------------------------------
+const P = {
+  book: '<path d="M4 5.5A2.5 2.5 0 0 1 6.5 3H20v15H6.5A2.5 2.5 0 0 0 4 20.5z"/><path d="M4 20.5A2.5 2.5 0 0 0 6.5 23H20v-5"/>',
+  cal: '<rect x="3" y="4.5" width="18" height="17" rx="3"/><path d="M3 10h18M8 2.5v4M16 2.5v4"/>',
+  gear: '<circle cx="12" cy="12" r="3.2"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/>',
+  back: '<path d="M15 5l-7 7 7 7"/>',
+  next: '<path d="M9 5l7 7-7 7"/>',
+  check: '<path d="M5 12.5l4.5 4.5L19 7.5"/>',
+  speak: '<path d="M4 9.5v5h4l5 4.5v-14L8 9.5z"/><path d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/>',
+  stop: '<rect x="6" y="6" width="12" height="12" rx="2.5"/>',
+  lock: '<rect x="4.5" y="10.5" width="15" height="11" rx="2.5"/><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3"/>',
+  down: '<path d="M12 3.5v12M7 11l5 5 5-5M4.5 20.5h15"/>',
+  up: '<path d="M12 16V4M7 8.5l5-5 5 5M4.5 20.5h15"/>',
+  trash: '<path d="M4 7h16M10 11v6M14 11v6M5.5 7l1 13a1.5 1.5 0 0 0 1.5 1.4h8a1.5 1.5 0 0 0 1.5-1.4l1-13M9 7V4.5A1.5 1.5 0 0 1 10.5 3h3A1.5 1.5 0 0 1 15 4.5V7"/>',
+  plus: '<path d="M12 5v14M5 12h14"/>',
+  alert: '<path d="M12 3.5L2.5 20h19z"/><path d="M12 10v4.5M12 17.5v.01"/>',
+  jp: '<circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="3.5" fill="currentColor"/>',
+};
+const ic = (n, cls = '') => `<svg class="i ${cls}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${P[n]}</svg>`;
+const STAR = '<svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M12 2.8l2.8 5.8 6.3.9-4.6 4.4 1.1 6.3L12 17.2l-5.6 3 1.1-6.3L2.9 9.5l6.3-.9z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>';
+document.getElementById('hback').innerHTML = ic('back');
+for (const [tab, icon, label] of [['fiches', 'book', 'Fiches'], ['calendrier', 'cal', 'Calendrier'], ['reglages', 'gear', 'Réglages']])
+  document.querySelector(`[data-tab=${tab}]`).innerHTML = `<span class="pill">${ic(icon)}</span><span>${label}</span>`;
+
+// --- Données : dans le navigateur, avec export / import -----------------
+const KEY = 'yobanashi.data';
+const TAGS = ['danger', 'lire-les-gens', 'caractère', 'dureté-du-monde', 'imagination'];
+const COULEURS = ['#4b5bb7', '#e0663a', '#1e9a68', '#c2448f', '#d49a12', '#2f8fb8'];
+const state = { fiches: [], data: null, filtreTag: null, tri: 'ordre' };
+const app = document.getElementById('app');
+const $esc = (s) => String(s ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+const today = () => new Date().toLocaleDateString('sv-SE');
+const isValidData = (d) => d && Array.isArray(d.membres) && Array.isArray(d.seances) && d.etoiles && typeof d.etoiles === 'object';
+
+function readData() {
+  try { const d = JSON.parse(localStorage.getItem(KEY)); if (isValidData(d)) return d; } catch {}
+  return { membres: [{ id: 'papa', prenom: 'Papa', naissance: '', role: 'papa', couleur: COULEURS[0] }], etoiles: {}, seances: [] };
+}
+function save() {
+  try { localStorage.setItem(KEY, JSON.stringify(state.data)); }
+  catch { toast("Impossible d'enregistrer dans ce navigateur"); }
+}
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(toast.t); toast.t = setTimeout(() => t.classList.remove('show'), 2200);
+}
+
+const pl = (n, un, plusieurs = un + 's') => `${n} ${n > 1 ? plusieurs : un}`;
+
+// Dialogue de confirmation : feuille en bas d'écran, à la place de confirm().
+function confirmer({ titre, texte = '', action, danger = false }) {
+  return new Promise((resolve) => {
+    const scrim = document.createElement('div');
+    scrim.className = 'scrim';
+    scrim.innerHTML = `<div class="sheet" role="dialog" aria-modal="true" aria-labelledby="sheet-t"><div class="grab"></div>
+      <h2 id="sheet-t">${$esc(titre)}</h2>${texte ? `<p>${$esc(texte)}</p>` : ''}
+      <button class="btn ${danger ? 'danger' : 'primary'}" data-r="1">${$esc(action)}</button>
+      <button class="btn" data-r="0">Annuler</button></div>`;
+    const close = (r) => {
+      removeEventListener('keydown', onKey);
+      scrim.classList.add('out');
+      setTimeout(() => scrim.remove(), 150);
+      resolve(r);
+    };
+    const onKey = (e) => { if (e.key === 'Escape') close(false); };
+    scrim.onclick = (e) => { if (e.target === scrim) close(false); else if (e.target.dataset.r) close(e.target.dataset.r === '1'); };
+    addEventListener('keydown', onKey);
+    document.body.append(scrim);
+    scrim.querySelector('[data-r="1"]').focus();
+  });
+}
+
+async function load() {
+  state.fiches = await fetch('fiches.json', { cache: 'no-store' }).then((r) => { if (!r.ok) throw new Error(r.status); return r.json(); });
+  state.data = readData();
+  route();
+}
+
+// --- Aides -------------------------------------------------------------
+const ageOf = (naissance) => {
+  if (!naissance) return null;
+  const b = new Date(naissance), n = new Date();
+  let a = n.getFullYear() - b.getFullYear();
+  if (n < new Date(n.getFullYear(), b.getMonth(), b.getDate())) a--;
+  return a;
+};
+const enfants = () => state.data.membres.filter((m) => m.role === 'enfant');
+const seancesDe = (id) => state.data.seances.filter((s) => s.ficheId === id);
+const etoiles = (ficheId, membreId) => state.data.etoiles[ficheId]?.[membreId] || 0;
+const moyenne = (ficheId) => {
+  const v = Object.values(state.data.etoiles[ficheId] || {}).filter(Boolean);
+  return v.length ? v.reduce((a, b) => a + b, 0) / v.length : 0;
+};
+const couleur = (m, i) => /^#[0-9a-f]{6}$/i.test(m.couleur) ? m.couleur : COULEURS[i % COULEURS.length];
+const avatar = (m, i) => `<span class="avatar tint" style="--accent:${couleur(m, i)}">${$esc((m.prenom || '?').slice(0, 1).toUpperCase())}</span>`;
+const dateFr = (iso, opts) => new Date(iso + 'T12:00').toLocaleDateString('fr-FR', opts);
+
+function ficheDuSoir() {
+  const racontees = new Set(state.data.seances.map((s) => s.ficheId));
+  const derniere = [...state.data.seances].sort((a, b) => b.date.localeCompare(a.date))[0];
+  const derniereDure = derniere && state.fiches.find((f) => f.id === derniere.ficheId)?.dure;
+  const restantes = state.fiches.filter((f) => !racontees.has(f.id));
+  return (derniereDure && restantes.find((f) => !f.dure)) || restantes[0] || null;
+}
+
+const tags = (f) => `${f.tags.map((t) => `<span class="tag">${$esc(t)}</span>`).join('')}
+  ${f.dure ? '<span class="tag dure">dure</span>' : ''}${f.prive ? `<span class="tag">${ic('lock')}privée</span>` : ''}`;
+// Première phrase d'« À retenir » : la ligne de soutien sous le titre.
+const resume = (f) => {
+  const s = f.sections.find((x) => /retenir/i.test(x.titre));
+  if (!s) return '';
+  const t = s.html.replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+  return (t.match(/^.+?[.!?](?=\s|$)/) || [t])[0];
+};
+
+function carte(f) {
+  const n = seancesDe(f.id).length, moy = moyenne(f.id);
+  return `<a class="row-link ${n ? 'done' : ''}" href="#/fiche/${encodeURIComponent(f.id)}"><div class="body">
+    <div class="title">${$esc(f.titre)}</div>
+    <div class="meta">${tags(f)}
+      ${f.age ? `<span class="num">${f.age} ans et +</span>` : ''}
+      ${moy ? `<span class="rating num" aria-label="${moy.toFixed(1)} étoiles sur 5">${STAR}${moy.toFixed(1).replace('.', ',')}</span>` : ''}
+      ${n ? `<span class="ok">${ic('check')}racontée${n > 1 ? ` ${n} fois` : ''}</span>` : ''}
+    </div></div>${ic('next', 'chev')}</a>`;
+}
+
+// --- Vues --------------------------------------------------------------
+function vueListe() {
+  const soir = ficheDuSoir();
+  let list = state.fiches.filter((f) => !state.filtreTag || f.tags.includes(state.filtreTag));
+  if (state.tri === 'moyenne') list = [...list].sort((a, b) => moyenne(b.id) - moyenne(a.id));
+  else if (state.tri.startsWith('m:')) { const id = state.tri.slice(2); list = [...list].sort((a, b) => etoiles(b.id, id) - etoiles(a.id, id)); }
+  else if (state.tri === 'non-racontees') list = list.filter((f) => !seancesDe(f.id).length);
+  app.innerHTML = `<div class="view">
+    ${soir ? `<section class="card tonight" aria-labelledby="ce-soir">
+        <div class="label" id="ce-soir">Ce soir</div><div class="title">${$esc(soir.titre)}</div>
+        ${resume(soir) ? `<p class="support">${$esc(resume(soir))}</p>` : ''}
+        <a class="btn primary wide" href="#/fiche/${encodeURIComponent(soir.id)}">Ouvrir la Fiche</a></section>`
+      : '<div class="card empty"><div class="title">Toutes les Fiches ont été racontées</div>Ajoutez-en une dans <code>fiches/</code>, ou relisez les préférées.</div>'}
+    <div class="chips" role="group" aria-label="Filtrer par tag">
+      <button class="chip ${!state.filtreTag ? 'on' : ''}" data-tag="" aria-pressed="${!state.filtreTag}">Toutes</button>
+      ${TAGS.map((t) => `<button class="chip ${state.filtreTag === t ? 'on' : ''}" data-tag="${t}" aria-pressed="${state.filtreTag === t}">${t}</button>`).join('')}
+    </div>
+    <div class="row"><select id="tri" aria-label="Trier">
+      <option value="ordre">Ordre conseillé</option>
+      <option value="non-racontees">Pas encore racontées</option>
+      <option value="moyenne">Préférées de tous</option>
+      ${state.data.membres.map((m) => `<option value="m:${$esc(m.id)}">Préférées de ${$esc(m.prenom)}</option>`).join('')}
+    </select></div>
+    ${list.length ? `<div class="card list">${list.map(carte).join('')}</div>` : '<p class="empty">Aucune Fiche pour ce choix.</p>'}</div>`;
+  app.querySelector('#tri').value = state.tri;
+  app.querySelector('#tri').onchange = (e) => { state.tri = e.target.value; vueListe(); };
+  app.querySelectorAll('[data-tag]').forEach((b) => b.onclick = () => { state.filtreTag = b.dataset.tag || null; vueListe(); });
+}
+
+function section(s) {
+  const t = $esc(s.titre);
+  if (/japonais|日本語/i.test(s.titre)) return `<details class="section ja"><summary><h3>${t}${ic('next', 'chev')}</h3></summary>
+    <button class="btn tinted speak">${ic('speak')}<span>読（よ）み上（あ）げる</span></button><div class="prose" style="margin-top:8px">${s.html}</div></details>`;
+  const cls = /retenir/i.test(s.titre) ? 'retenir' : /récit/i.test(s.titre) ? 'recit' : /piège/i.test(s.titre) && /question/i.test(s.titre) ? 'piege' : '';
+  if (/pièges à éviter|âge conseillé/i.test(s.titre)) return `<details class="section"><summary><h3>${t}${ic('next', 'chev')}</h3></summary><div class="prose">${s.html}</div></details>`;
+  return `<section class="section ${cls}"><h3>${t}</h3><div class="prose">${s.html}</div></section>`;
+}
+
+function vueFiche(id) {
+  const f = state.fiches.find((x) => x.id === id);
+  if (!f) { app.innerHTML = '<p class="empty">Fiche introuvable.</p>'; return; }
+  document.getElementById('htitle').textContent = '';
+  const tropJeunes = f.age ? enfants().filter((m) => { const a = ageOf(m.naissance); return a !== null && a < f.age; }) : [];
+  const seances = seancesDe(f.id).sort((a, b) => b.date.localeCompare(a.date));
+  app.innerHTML = `<article class="view">
+    <div class="fiche-head">
+      <div class="meta">${tags(f)}${f.age ? `<span class="num">${f.age} ans et +</span>` : ''}</div>
+      <h2>${$esc(f.titre)}</h2>
+      ${f.source ? `<div class="source">${$esc(f.source)}</div>` : ''}
+      ${tropJeunes.length ? `<div class="warn">${ic('alert')}<span>Peut-être trop tôt pour ${tropJeunes.map((m) => $esc(m.prenom)).join(', ')} : voir « Âge conseillé ».</span></div>` : ''}
+    </div>
+    ${f.images.length ? `<div class="figs">${f.images.map((i) => `<figure><img loading="lazy" src="${$esc(i.src)}" alt="${$esc(i.legende)}"><figcaption>${$esc(i.legende)}${i.commons ? `<br><a class="credit" target="_blank" rel="noopener" href="https://commons.wikimedia.org/wiki/${encodeURIComponent(i.commons.replace(/ /g, '_'))}">Wikimedia Commons · ${$esc(i.licence || 'voir la licence')}</a>` : ''}</figcaption></figure>`).join('')}</div>` : ''}
+    ${f.sections.map(section).join('')}
+  </article>
+  <h3 class="group">Étoiles</h3>
+  <div class="card">${state.data.membres.map((m, i) => `<div class="who-row">${avatar(m, i)}<span class="name">${$esc(m.prenom || '—')}</span>
+    <div class="stars" role="group" aria-label="Étoiles de ${$esc(m.prenom)}">${[1, 2, 3, 4, 5].map((n) =>
+      `<button data-m="${$esc(m.id)}" data-n="${n}" class="${etoiles(f.id, m.id) >= n ? 'lit' : ''}" aria-label="${n} étoile${n > 1 ? 's' : ''}" aria-pressed="${etoiles(f.id, m.id) === n}">${STAR}</button>`).join('')}</div></div>`).join('')}
+    ${enfants().length ? '' : '<p class="note">Ajoutez les enfants dans Réglages.</p>'}</div>
+  <h3 class="group">Séance</h3>
+  <div class="card">
+    <div class="row"><div><label class="f" for="sdate">Date</label><input type="date" id="sdate" value="${today()}"></div></div>
+    <div class="row"><div><label class="f" for="scom">Commentaire</label><textarea id="scom" placeholder="Leur réaction, ce qui a plu…"></textarea></div></div>
+    <button class="btn primary wide" id="sadd">${ic('check')}Racontée</button>
+    ${seances.length ? `<div style="margin-top:12px">${seances.map(seanceRow).join('')}</div>` : ''}
+  </div>`;
+  app.querySelectorAll('.stars button').forEach((b) => b.onclick = () => {
+    const e = (state.data.etoiles[f.id] ||= {});
+    const n = Number(b.dataset.n);
+    e[b.dataset.m] = e[b.dataset.m] === n ? 0 : n;
+    save();
+    b.parentElement.querySelectorAll('button').forEach((x) => {
+      x.classList.toggle('lit', Number(x.dataset.n) <= e[b.dataset.m]);
+      x.setAttribute('aria-pressed', Number(x.dataset.n) === e[b.dataset.m]);
+    });
+  });
+  app.querySelectorAll('.speak').forEach((b) => b.onclick = () => speakJa(b));
+  app.querySelector('#sadd').onclick = () => {
+    state.data.seances.push({ id: crypto.randomUUID?.() || String(Date.now()), date: app.querySelector('#sdate').value || today(),
+      ficheId: f.id, commentaire: app.querySelector('#scom').value.trim() });
+    save(); vueFiche(id); toast('Séance enregistrée');
+  };
+  scrollTo(0, 0);
+}
+
+function seanceRow(s, { lien = false, suppr = false } = {}) {
+  const titre = state.fiches.find((f) => f.id === s.ficheId)?.titre || s.ficheId;
+  return `<div class="seance"><div class="date"><b>${dateFr(s.date, { day: 'numeric' })}</b><span>${dateFr(s.date, { month: 'short' })}</span></div>
+    <div class="body">${lien ? `<a href="#/fiche/${encodeURIComponent(s.ficheId)}">${$esc(titre)}</a>` : ''}
+      ${s.commentaire ? `<div class="com">${$esc(s.commentaire)}</div>` : lien ? '' : '<div class="com">Racontée.</div>'}</div>
+    ${suppr ? `<button class="icon-btn plain" data-del="${$esc(s.id)}" aria-label="Supprimer cette Séance">${ic('trash')}</button>` : ''}</div>`;
+}
+
+// Lecture à voix haute du japonais (voix de l'appareil, sans les furigana en double).
+// Choisit la meilleure voix japonaise : les voix « Eloquence » de macOS/iOS (Eddy, Flo, Grandma…) sonnent robotiques.
+const VOIX_BONNES = /premium|enhanced|amélior|siri|google|kyoko|o-ren|otoya|hattori|nanami|keita|haruka|ayumi|ichiro/i;
+const VOIX_ROBOT = /eddy|flo|grandma|grandpa|reed|rocko|sandy|shelley|mamie|papy|compact/i;
+function voixJa(synth) {
+  const ja = synth.getVoices().filter((v) => v.lang.replace('_', '-').toLowerCase().startsWith('ja'));
+  const score = (v) => (VOIX_BONNES.test(v.name) ? 4 : 0) + (VOIX_ROBOT.test(v.name) ? -8 : 0) + (v.localService ? 1 : 0) + (v.lang === 'ja-JP' ? 1 : 0);
+  return ja.sort((x, y) => score(y) - score(x))[0];
+}
+// Chrome charge les voix après coup : on attend un peu au premier appel.
+const voixPretes = () => new Promise((ok) => {
+  const synth = window.speechSynthesis;
+  if (synth.getVoices().length) return ok();
+  synth.addEventListener('voiceschanged', ok, { once: true });
+  setTimeout(ok, 1000);
+});
+let lecture = 0;
+async function speakJa(btn) {
+  const synth = window.speechSynthesis;
+  if (!synth) { toast('Lecture vocale indisponible'); return; }
+  const label = `${ic('speak')}<span>読（よ）み上（あ）げる</span>`;
+  const id = ++lecture;
+  if (synth.speaking || synth.pending || btn.dataset.lit) { synth.cancel(); delete btn.dataset.lit; btn.innerHTML = label; return; }
+  btn.dataset.lit = '1';
+  btn.innerHTML = `${ic('stop')}<span>とめる</span>`;
+  await voixPretes();
+  if (id !== lecture) return;
+  const clone = btn.nextElementSibling.cloneNode(true);
+  clone.querySelectorAll('rt, rp').forEach((n) => n.remove());
+  // Une phrase par énoncé : des pauses naturelles, et Chrome ne coupe plus les longs textes.
+  const phrases = clone.innerText.replace(/\s+/g, ' ').trim().match(/[^。！？!?]+[。！？!?」』]*/g) || [];
+  const voice = voixJa(synth);
+  const fin = () => { if (id === lecture) { delete btn.dataset.lit; btn.innerHTML = label; } };
+  phrases.forEach((t, i) => {
+    const u = new SpeechSynthesisUtterance(t.trim());
+    u.lang = 'ja-JP'; u.rate = 0.9;
+    if (voice) u.voice = voice;
+    if (i === phrases.length - 1) u.onend = fin;
+    u.onerror = fin;
+    synth.speak(u);
+  });
+  if (!phrases.length) fin();
+}
+addEventListener('hashchange', () => window.speechSynthesis?.cancel());
+
+let calMois = null;
+function vueCalendrier() {
+  const seances = [...state.data.seances].sort((a, b) => b.date.localeCompare(a.date));
+  const now = new Date();
+  calMois ||= [now.getFullYear(), now.getMonth()];
+  const [y, mo] = calMois;
+  const premier = new Date(y, mo, 1), jours = new Date(y, mo + 1, 0).getDate();
+  const decal = (premier.getDay() + 6) % 7;
+  const prefix = `${y}-${String(mo + 1).padStart(2, '0')}-`;
+  const dates = new Set(seances.map((s) => s.date));
+  let cells = ['L', 'M', 'M', 'J', 'V', 'S', 'D'].map((d) => `<div class="hd">${d}</div>`).join('') + '<div></div>'.repeat(decal);
+  for (let d = 1; d <= jours; d++) {
+    const iso = prefix + String(d).padStart(2, '0');
+    cells += `<div class="${dates.has(iso) ? 'has' : ''} ${iso === today() ? 'today' : ''}">${d}</div>`;
+  }
+  const duMois = seances.filter((s) => s.date.startsWith(prefix)).length;
+  const racontees = new Set(seances.map((s) => s.ficheId)).size;
+  app.innerHTML = `<div class="view"><div class="card">
+    <div class="cal-head"><button class="icon-btn" id="prev" aria-label="Mois précédent">${ic('back')}</button>
+      <b>${premier.toLocaleDateString('fr-FR', { month: 'long', year: 'numeric' })}</b>
+      <button class="icon-btn" id="next" aria-label="Mois suivant">${ic('next')}</button></div>
+    <div class="cal">${cells}</div>
+    <div class="stats"><div class="stat"><b>${duMois}</b><span>${duMois > 1 ? 'Séances' : 'Séance'} ce mois-ci</span></div>
+      <div class="stat"><b>${seances.length}</b><span>${seances.length > 1 ? 'Séances' : 'Séance'} en tout</span></div>
+      <div class="stat"><b>${racontees}<small style="font-size:.6em;color:var(--ink-soft)"> / ${state.fiches.length}</small></b><span>${racontees > 1 ? 'Fiches racontées' : 'Fiche racontée'}</span></div></div></div>
+    <h3 class="group">Séances</h3>
+    ${seances.length ? `<div class="card">${seances.map((s) => seanceRow(s, { lien: true, suppr: true })).join('')}</div>`
+      : `<div class="card empty"><div class="title">Pas encore de Séance</div>Après avoir raconté une Fiche, touchez « Racontée » en bas de la Fiche.
+        ${ficheDuSoir() ? `<br><a class="btn primary" href="#/fiche/${encodeURIComponent(ficheDuSoir().id)}">Ouvrir la Fiche du soir</a>` : ''}</div>`}</div>`;
+  app.querySelector('#prev').onclick = () => { calMois = mo === 0 ? [y - 1, 11] : [y, mo - 1]; vueCalendrier(); };
+  app.querySelector('#next').onclick = () => { calMois = mo === 11 ? [y + 1, 0] : [y, mo + 1]; vueCalendrier(); };
+  app.querySelectorAll('[data-del]').forEach((b) => b.onclick = async () => {
+    if (!await confirmer({ titre: 'Supprimer cette Séance ?', texte: 'Sa date et son commentaire seront perdus.', action: 'Supprimer', danger: true })) return;
+    state.data.seances = state.data.seances.filter((s) => s.id !== b.dataset.del);
+    save(); vueCalendrier();
+  });
+}
+
+function vueReglages() {
+  const exp = localStorage.getItem(KEY + '.export');
+  app.innerHTML = `<div class="view">
+    <h3 class="group" style="margin-top:8px">Famille</h3>
+    <p class="note">La date de naissance sert à l'Âge conseillé.</p>
+    ${state.data.membres.map((m, i) => `<div class="card membre tint" style="--accent:${couleur(m, i)}">
+      <div class="row" style="align-items:center">${avatar(m, i)}
+        <input data-i="${i}" data-k="prenom" value="${$esc(m.prenom)}" placeholder="Prénom" aria-label="Prénom">
+        <button class="icon-btn plain fit" data-rm="${i}" aria-label="Retirer ${$esc(m.prenom)}">${ic('trash')}</button></div>
+      <div class="row">
+        <div><label class="f">Rôle</label><select data-i="${i}" data-k="role"><option value="enfant">Enfant</option><option value="papa">Papa</option><option value="autre">Autre</option></select></div>
+        <div><label class="f">Naissance${ageOf(m.naissance) !== null ? ` · ${ageOf(m.naissance)} ans` : ''}</label><input type="date" data-i="${i}" data-k="naissance" value="${$esc(m.naissance)}"></div></div>
+      <div class="swatches" role="group" aria-label="Couleur">${COULEURS.map((c) => `<button data-i="${i}" data-c="${c}" class="${couleur(m, i) === c ? 'on' : ''}" aria-label="Couleur ${c}" aria-pressed="${couleur(m, i) === c}"><span style="background:${c}"></span></button>`).join('')}</div>
+    </div>`).join('')}
+    <button class="btn primary wide" id="add">${ic('plus')}Ajouter un enfant</button>
+
+    <h3 class="group">Sauvegarde</h3>
+    <div class="card">
+      <p class="note" style="margin:0 0 12px">Gardée dans ce navigateur seulement. Le fichier exporté se réimporte sur un autre appareil.
+        ${exp ? `<br>Dernier export : ${dateFr(exp, { day: 'numeric', month: 'long', year: 'numeric' })}.` : ''}</p>
+      <div class="row"><button class="btn" id="exp">${ic('down')}Exporter</button><button class="btn" id="imp">${ic('up')}Importer</button></div>
+      <input type="file" id="file" accept="application/json,.json" hidden>
+    </div></div>`;
+  app.querySelectorAll('select[data-k]').forEach((s) => s.value = state.data.membres[s.dataset.i].role);
+  app.querySelectorAll('[data-k]').forEach((el) => el.onchange = () => {
+    state.data.membres[el.dataset.i][el.dataset.k] = el.value; save(); vueReglages();
+  });
+  app.querySelectorAll('[data-c]').forEach((b) => b.onclick = () => {
+    state.data.membres[b.dataset.i].couleur = b.dataset.c; save(); vueReglages();
+  });
+  app.querySelectorAll('[data-rm]').forEach((b) => b.onclick = async () => {
+    const m = state.data.membres[b.dataset.rm];
+    if (!await confirmer({ titre: `Retirer ${m.prenom || 'ce Membre'} ?`, texte: 'Ses Étoiles restent enregistrées.', action: 'Retirer', danger: true })) return;
+    state.data.membres.splice(b.dataset.rm, 1); save(); vueReglages();
+  });
+  app.querySelector('#add').onclick = () => {
+    const i = state.data.membres.length;
+    state.data.membres.push({ id: 'm' + Date.now(), prenom: '', naissance: '', role: 'enfant', couleur: COULEURS[i % COULEURS.length] });
+    save(); vueReglages();
+    app.querySelector(`input[data-i="${i}"][data-k="prenom"]`)?.focus();
+  };
+  app.querySelector('#exp').onclick = () => {
+    const blob = new Blob([JSON.stringify(state.data, null, 2) + '\n'], { type: 'application/json' });
+    const a = Object.assign(document.createElement('a'), { href: URL.createObjectURL(blob), download: `yobanashi-${today()}.json` });
+    a.click(); setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    try { localStorage.setItem(KEY + '.export', today()); } catch {}
+    vueReglages(); toast('Fichier exporté');
+  };
+  const file = app.querySelector('#file');
+  app.querySelector('#imp').onclick = () => file.click();
+  file.onchange = async () => {
+    const f = file.files[0];
+    file.value = ''; // pour pouvoir réimporter le même fichier
+    if (!f) return;
+    try {
+      const d = JSON.parse(await f.text());
+      if (!isValidData(d)) throw new Error();
+      if (!await confirmer({ titre: 'Remplacer les données ?', texte: `Ce fichier contient ${pl(d.membres.length, 'Membre')} et ${pl(d.seances.length, 'Séance')}. Les données actuelles de ce navigateur seront remplacées.`, action: 'Remplacer', danger: true })) return;
+      state.data = d; save(); vueReglages(); toast('Données importées');
+    } catch { toast("Ce fichier n'est pas une sauvegarde Yobanashi"); }
+  };
+}
+
+function route() {
+  if (!state.data) return;
+  const parts = (location.hash.slice(1) || '/').split('/').filter(Boolean);
+  const tab = parts[0] === 'calendrier' ? 'calendrier' : parts[0] === 'reglages' ? 'reglages' : 'fiches';
+  document.querySelectorAll('nav.tabs a').forEach((a) => {
+    a.classList.toggle('on', a.dataset.tab === tab);
+    a.toggleAttribute('aria-current', a.dataset.tab === tab);
+  });
+  document.getElementById('hback').hidden = parts[0] !== 'fiche';
+  document.getElementById('htitle').innerHTML = { fiches: 'Yobanashi<small>夜話</small>', calendrier: 'Calendrier', reglages: 'Réglages' }[tab];
+  if (parts[0] === 'fiche') vueFiche(decodeURIComponent(parts[1]));
+  else if (tab === 'calendrier') vueCalendrier();
+  else if (tab === 'reglages') vueReglages();
+  else vueListe();
+}
+
+addEventListener('hashchange', route);
+load().catch((e) => app.innerHTML = `<p class="empty">Impossible de charger les Fiches (${$esc(e.message)}).</p>`);
+</script>
+</body>
+</html>
